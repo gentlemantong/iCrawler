@@ -1,12 +1,12 @@
 # iCrawler
 A simple web crawler.
 
-###1. 数据流向图
+### 1. 数据流向图
 Provider从外部（Kafka, MySQL, MongoDB, Excel, CSV等）获取消息，发送给Processor处理（数据抓取, 数据清洗等）；
 Processor处理完之后将结果发送给Pipeline做后续持久化相关操作（入库, Kafka, 本地文件等）。
 
 
-###2. 架构
+### 2. 架构
 - 启动脚本加载配置文件，启动调度器程序（调度器负责协调Provider, Processor和Pipeline）。
 - Provider, Processor和Pipeline分别使用三个独立的协程工作。
     - 根据配置, Provider不断从指定的外部数据源获取消息，通过queue发送给Processor处理；
@@ -14,28 +14,28 @@ Processor处理完之后将结果发送给Pipeline做后续持久化相关操作
     - Pipeline从queue中获取自己需要操作的数据对象，执行后续持久化相关操作；
 
 
-###3. 涉及到的Python相关模块
+### 3. 涉及到的Python相关模块
 - Python版本：2.7.X(兼容3.6.X)
 - 相关模块：
 `gevent`, `magic`, `requests`, `pymysql`, `bson`, `pymongo`, `xlrd`, `xlwt`, `cchardet`, `bs4`, `lxml`等（因为数据库、Kafka和阿里相关服务主要是调用http服务，省去了很多自己封装方法的麻烦，所以很多的包在这里都没有用到，比如阿里的ots2等）。
 - 编辑器：推荐使用PyCharm
 
-###4. 目录结构（示例）
+### 4. 目录结构（示例）
  
-####4.0 cache：临时文件存放目录
+#### 4.0 cache：临时文件存放目录
 当Provider从外部（Kafka等）获取消息时，为防止在运行过程中突然出现中断导致的消息体丢失，Provider会将消息体以临时文件的形式存储在本地的cache目录下（pickle）。在数据处理结束后，程序会自动删除缓存的临时文件。
 
-####4.1 logs：日志文件存放目录
+#### 4.1 logs：日志文件存放目录
 框架的日志文件默认存储在logs文件夹下。
 日志文件的命名格式为：`iCrawler_{0}.log`，其中参数为对应Schema的值（schema会在后面介绍）。
 日志文件目前默认只保存1个备份（1个小时之前的备份）
 
-####4.2 src：项目文件主体
+#### 4.2 src：项目文件主体
 src目录是项目文件的主体。当我们开始一个新的任务时，需要执行的所有操作中，99%都在该目录进行。
-#####4.2.0 cores：Scheduler相关文件
+##### 4.2.0 cores：Scheduler相关文件
 
 cores是调度器相关的核心代码文件目录。所有的任务代码在运行时，都是这些文件进行调度的，这里只简单介绍一下各个文件的作用（无特殊需求，不需要修改该部分的代码）
-######4.2.0.0 services：封装的相关服务调用
+###### 4.2.0.0 services：封装的相关服务调用
 - `dama.py`：打码相关服务，目前仅支持图形类验证码，封装了包括打码兔和我们自己部署的打码服务；
 - `dama2_client.py`：封装的打码兔服务（正常不需要直接调用该文件中的方法，`dama.py`已经对该文件进行了二次封装，可以直接调用dama.py）；
 - `duplicate_client.py`：查重；
@@ -46,15 +46,15 @@ cores是调度器相关的核心代码文件目录。所有的任务代码在运
 - `mysql_client.py`：mysql相关方法（包括直连和调用http服务两种方式）；
 - `oss_client.py`：二次封装的阿里OSS相关操作方法（调用http服务）；
 - `proxy_client.py`：二次封装的代理相关方法（调用http服务）；
-######4.2.0.1 `customer.py`：自定义类，目前只定义了`CustomerJsonEncoder`，用来给`json.dumps`使用
-######4.2.0.2 `exception.py`：异常类
-######4.2.0.3 `item.py`：结果类的父类
-######4.2.0.4 `launcher.py`：启动器，为对应的provider，processor和pipeline创建自己的协程
-######4.2.0.5 `pipeline.py`：各个Pipeline的父类以及调度方法
-######4.2.0.6 `process.py`：各个Processor的父类以及调度方法
-######4.2.0.7 `provider.py`：Provider主体及调度方法
+###### 4.2.0.1 `customer.py`：自定义类，目前只定义了`CustomerJsonEncoder`，用来给`json.dumps`使用
+###### 4.2.0.2 `exception.py`：异常类
+###### 4.2.0.3 `item.py`：结果类的父类
+###### 4.2.0.4 `launcher.py`：启动器，为对应的provider，processor和pipeline创建自己的协程
+###### 4.2.0.5 `pipeline.py`：各个Pipeline的父类以及调度方法
+###### 4.2.0.6 `process.py`：各个Processor的父类以及调度方法
+###### 4.2.0.7 `provider.py`：Provider主体及调度方法
 
-#####4.2.1 items：结果类目录
+##### 4.2.1 items：结果类目录
 
  该目录主要存放每个维度数据的结果类文件。结果类文件的作用是确保每个维度数据在执行过程中保持结构一致，当然，加上合理的注释后也可以作为文档使用。
 下面是一个常见的结果类定义格式：
@@ -95,7 +95,7 @@ item.number = u'123456'
 ...
 ```
 
-#####4.2.2 piplines：Pipeline类目录
+##### 4.2.2 piplines：Pipeline类目录
 
 该目录主要存放各个维度数据的结果pipeline类文件。 pipeline类文件主要进行数据持久化的相关操作，也可以进行结果的处理和过滤等。下面是常见的pipeline类结构：
 ```python
@@ -145,7 +145,7 @@ class ExecutedPersonPipeline(Pipeline):
 - `process_item(self, config, result)`方法必须进行重构（父类中的该方法为空），且需要以该函数为起始函数，编写主处理逻辑；
 - `transfer_none_to_empty_str`和`flow_to_oss_and_kafka`也是继承自父类。正常情况下，父类中的方法除了`process_item`需要重构外，其他方法都只需要直接调用使用即可（类似工具类方法）；
 
-#####4.2.3 plugins：Processor类目录
+##### 4.2.3 plugins：Processor类目录
 
 plugins目录是存放processor类的地方，也是通常我们编写一个爬虫或清洗脚本的主要目录。下面是一个常规爬虫的代码编写样例：
 ```python
@@ -322,24 +322,24 @@ class BlackListProcessor(Processor):
     - 如果需要抓取详情页，需要将列表页数据放到`list_records`，`has_detail`设为`True`。然后重构`request_detail_page`方法，父类会将列表页数据自动传递到该方法。记住，抓取详情页的话，需要手动调用父类的`pipeline_pusher`方法，将结果发送给对应的pipeline类处理；
 - 前面定义的item类在这里被使用；
 
-#####4.2.4 utils：工具类目录
+##### 4.2.4 utils：工具类目录
 该目录主要存放一些工具类。工具类可以根据任务需求进行添加和修改。
 
-#####4.2.5 `config.py`：参数配置文件
+##### 4.2.5 `config.py`：参数配置文件
 config文件主要是一些运行参数的配置，通常不需要更新该文件。
 
-#####4.2.6 requirements：依赖包目录
+##### 4.2.6 requirements：依赖包目录
 `requirements`是为了方便新环境安装依赖包添加的文件。正常在新的环境下，在安装好相应的python之后，进入该目录，执行
 ```sh
 pipX install -r requirements
 ```
 其中`pipX`是与需要使用的python对应的`pip`命令。（安装过程如果需要加速，可使用`pipX install -r requirements -i https://mirrors.aliyun.com/pypi/simple/`）
 
-#####4.2.7 setting.py：启动配置文件
+##### 4.2.7 setting.py：启动配置文件
 
 setting是使用json格式编写的配置文件。项目启动时，程序加载指定的schema（schema是`lauch.py`的一个参数，值为上图中`PLUGINS`的一个键名，如`STATIC`，`CRAWLER00`等。运行时，每个进程只能指定一个schema。如果需要开启不同的schema，则需要开启不同的进程）下的插件，运行程序。
 
-######4.2.7.0. COMMON：默认配置参数
+###### 4.2.7.0. COMMON：默认配置参数
 `COMMON`字段是单个插件可配置参数的字段库，同时也初始化了配置参数。正式部署时，单个插件需要根据任务需求选择对应的参数，并配置合适的值。
 ```python
 u'COMMON': {
@@ -437,7 +437,7 @@ u'valid_time': [                        # 只有当run_schema为repeat时才会�
 ]
 ```
 
-######4.2.7.1. PLUGINS：插件列表
+###### 4.2.7.1. PLUGINS：插件列表
 PLUGINS是插件的列表，更确切地说是插件schema的列表。具体的插件配置是在各个schema下，可以根据任务需求增加新的schema或去掉不用的schema。
 默认情况下，`STATIC`和`TODO`这两个schema不会参与正式环境运行，也不能删掉。其他的schema，可根据部署的需要，添加、删除或移动其中的插件配置（只改动自己开发的插件配置）。
 - `STATIC`是本地开发时默认使用的schema，比如在本地开发和调试企业负面信息抓取，setting的调试配置如下：
@@ -451,7 +451,7 @@ PLUGINS是插件的列表，更确切地说是插件schema的列表。具体的�
 - 正式部署时，将需要部署的插件配置到需要开启的schema下面。如下图，线上需要部署*贵州省新增企业公告抓取*，*被执行人自动更新*和*失信被执行人自动更新*这三个插件，则需要将这三个插件的配置放到`CRAWLER00`下面。
 
 
-####4.3 launch.py：启动文件
+#### 4.3 launch.py：启动文件
 ```python
 # -*- coding: utf-8 -*-
 from gevent import monkey
@@ -495,7 +495,7 @@ if __name__ == u'__main__':
 - 在开发环境，该文件无需修改，在配置好`setting.py`下`STATIC`这个schema之后，直接右键-Run/debug即可；
 - 在服务器上，使用对应的`sh`文件启动，尽量不要直接手动输入参数运行；
 
-####4.4 crawler00.sh：部署启动脚本
+#### 4.4 crawler00.sh：部署启动脚本
 在Linux服务器上使用该类脚本启动框架（需要事前设置`sh`文件为可执行文件）。
 ```sh
 #!/bin/sh
@@ -511,7 +511,7 @@ DEV：svn://114.55.126.4:10012/pub/data/DEV/iCrawler
 SIT：svn://114.55.126.4:10012/pub/data/SIT/iCrawler
 PROD：svn://114.55.126.4:10012/pub/data/spider/others/iCrawler
 
-###6. 插件开发几步走
+### 6. 插件开发几步走
 1. 新增插件
 通常，一个新维度数据的爬虫需要新建3个文件：item文件（根据任务情况建在items下面的对应层级目录中），processor文件（建在plugins下）和pipeline文件（建在pipelines下）。
 
