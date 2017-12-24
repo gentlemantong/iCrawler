@@ -1,6 +1,6 @@
 # iCrawler
 A simple web crawler.
-[TOC]
+
 ###1. 数据流向图
 Provider从外部（Kafka, MySQL, MongoDB, Excel, CSV等）获取消息，发送给Processor处理（数据抓取, 数据清洗等）；
 Processor处理完之后将结果发送给Pipeline做后续持久化相关操作（入库, Kafka, 本地文件等）。
